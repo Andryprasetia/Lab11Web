@@ -1,4 +1,4 @@
-# Pemograman Wen
+# Pemograman Web
 ~~~
 Nama  : Andry Prasetia Perdana
 NIM   : 311910284

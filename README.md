@@ -311,3 +311,126 @@ Buat direktori baru dengan nama artikel pada direktori app/views, kemudian buat 
 <?= $this->include('template/footer');?>
 ~~~
 ![124341901-1240d100-dbea-11eb-9ef2-4842f628eac0](https://user-images.githubusercontent.com/81818989/125019953-1b2a1a80-e0a2-11eb-8131-7483e38b33db.jpg)
+Selanjutnya buka browser kembali, dengan mengakses url http://localhost:8080/artikel
+![125495142-5bc3f9aa-f303-47c0-b197-3fd388faf721](https://user-images.githubusercontent.com/81818989/125738893-9bac02e2-c38a-404c-a2f6-e235d87fcaef.jpg)
+Belum ada data yang diampilkan. Kemudian coba tambahkan beberapa data pada database agar dapat ditampilkan datanya.
+~~~
+INSERT INTO artikel (judul, isi, slug) VALUE ('Artikel pertama', 'Lorem Ipsum adalah contoh teks atau dummy dalam industri percetakan dan
+penataan huruf atau typesetting. Lorem Ipsum telah menjadi standar contoh teks sejak tahun 1500an, saat seorang tukang cetak yang tidak dikenal
+mengambil sebuah kumpulan teks dan mengacaknya untuk menjadi sebuah buku contoh huruf.', 'artikel-pertama'), ('Artikel kedua', 'Tidak seperti
+anggapan banyak orang, Lorem Ipsum bukanlah teks-teks yang diacak. Ia berakar dari sebuah naskah sastra latin klasik dari era 45 sebelum masehi,
+hingga bisa dipastikan usianya telah mencapai lebih dari 2000 tahun.', 'artikel-kedua');
+~~~
+![125496053-6c93ff06-ab9e-42b0-afc9-8f09eff345d8](https://user-images.githubusercontent.com/81818989/125747812-5175e790-141f-464a-af1f-f9f939e032d4.jpg)
+Refresh kembali browser, sehingga akan ditampilkan hasilnya.
+![125496087-ad74096f-c2a5-4e49-beca-a340b4b96569](https://user-images.githubusercontent.com/81818989/125748487-b325ed7d-e25d-4f96-a750-b362af829cd6.jpg)
+# Membuat Tampilan Detail Artikel
+Tampilan pada saat judul berita di klik maka akan diarahkan ke halaman yang berbeda. Tambahkan fungsi baru pada Controller Artikel dengan nama view().
+~~~
+ public function view($slug)
+    {
+        $model = new ArtikelModel();
+        $artikel = $model->where([
+            'slug' => $slug
+        ])->first();
+        
+        // Menampilkan error apabila data tidak ada.
+        if (!$artikel)
+        {
+            throw PageNotFoundException::forPageNotFound();
+        }
+        $title = $artikel['judul'];
+        return view('artikel/detail', compact('artikel', 'title'));
+    }
+~~~
+![125497919-ec523717-8588-451b-b60d-f3a126eef1f7](https://user-images.githubusercontent.com/81818989/125748576-4b54584f-9356-4f56-9c4a-f4809a55bed1.jpg)
+
+# Membuat View Detail
+Buat view baru untuk halaman detail dengan nama app/views/artikel/detail.php.
+~~~
+<?= $this->include('template/header'); ?>
+
+<article class="entry">
+    <h2><?= $artikel['judul']; ?></h2>
+    <img src="<?= base_url('/gambar/' . $artikel['gambar']);?>" alt="<?= $artikel['judul']; ?>">
+    <p><?= $row['isi']; ?></p>
+</article>
+
+<?= $this->include('template/footer'); ?>
+~~~
+![125498574-da22daae-44c8-4d91-a7fc-57e2cb4ce35b](https://user-images.githubusercontent.com/81818989/125748783-1c673fbd-5542-420e-9415-96276ade1ff9.jpg)
+
+# Membuat Routing untuk artikel detail
+~~~
+$routes->get('/artikel/(:any)', 'Artikel::view/$1');
+~~~
+![125507964-4a4f059b-12c7-412e-a956-99f3b3b8f487](https://user-images.githubusercontent.com/81818989/125749341-c50cac7c-8574-449e-ba0b-f135d212602c.jpg)
+
+# Membuat Menu Admin
+Menu admin adalah untuk proses CRUD data artikel. Buat method baru pada Controller Artikel dengan nama admin_index().
+~~~
+ public function admin_index()
+    {
+        $title = 'Daftar Artikel';
+        $model = new ArtikelModel();
+        $artikel = $model->findAll();
+        
+        return view('artikel/admin_index', compact('artikel', 'title'));
+    }
+~~~
+![125516143-d6b7fcc0-de7a-45d6-aae2-e5429a3bada0](https://user-images.githubusercontent.com/81818989/125749481-59c95b7e-6df2-4c5e-b6a7-69afde32cbc0.jpg)
+Selanjutnya buat view untuk tampilan admin dengan nama admin_index.php
+~~~
+<?= $this->include('template/admin_header'); ?>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Judul</th>
+            <th>Status</th>
+            <th>AKsi</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php if($artikel): foreach($artikel as $row): ?>
+            <tr>
+                <td><?= $row['id']; ?></td>
+                <td>
+                    <b><?= $row['judul']; ?></b>
+                    <p><small><?= substr($row['isi'], 0, 50); ?></small></p>
+                </td>
+                <td><?= $row['status']; ?></td>
+                <td>
+                    <a class="btn" href="<?= base_url('/admin/artikel/edit/' . $row['id']);?>">Ubah</a>
+                    <a class="btn btn-danger" onclick="return confirm('Yakin menghapus data?');"
+                    href="<?= base_url('/admin/artikel/delete/' . $row['id']);?>">Hapus</a>
+                </td>
+            </tr>
+            <?php endforeach; else: ?>
+                <tr>
+                    <td colspan="4">Belum ada data.</td>
+                </tr>
+                    <?php endif; ?>
+    </tbody>
+    <tfoot>
+        <tr>
+            <th>ID</th>
+            <th>Judul</th>
+            <th>Status</th>
+            <th>AKsi</th>
+        </tr>
+    </tfoot>
+</table>
+<?= $this->include('template/admin_footer'); ?>
+~~~
+Tambahkan routing untuk menu admin seperti berikut:
+~~~
+$routes->group('admin', function($routes)
+{
+	$routes->get('artikel', 'Artikel::admin_index');
+	$routes->add('artikel/add', 'Artikel::add');
+	$routes->add('artikel/edit/(:any)', 'Artikel::edit/$1');
+	$routes->get('artikel/delete/(:any)', 'Artikel::delete/$1');
+});
+~~~
+![125517447-e876e6c1-0405-4c20-b794-d62a5240f0f6](https://user-images.githubusercontent.com/81818989/125749634-bde9c2ec-8600-4c18-840e-99aad36b781e.jpg)
